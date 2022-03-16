@@ -1,0 +1,110 @@
+# Section2: Smoke
+
+## Title: The Distribution of Chewing Tobacco usage and the use of Waterpipe Between Genders in America 2014
+
+## Abstract
+This report states the analysis and statistical modeling associated with 2014 American National Youth Tobacco Survey. The purpose is to build up regression models and determine the relationship between the use of chewing tobacco and races, waterpipe usage and genders into functions. The main finding is race shows significant effect to the regular use of chewing tobacco, more common amongst white Americans, but different gender given similiar background does not clearly effect trying waterpipe or hookha ever.
+
+## Introduction
+Smoking habit is different amongst America, according to the divergency of races, genders, demographic characteristics and some other social issues. The problems we will discuss in this report for one, is to find whether Americans of European ancestry no more commonly use the chewing tobacco comparing to Hispanic- Americans and African-Americans, for the other is to determine whether gender effects trying waterpipe or hookah. The 2014 American National Youth Tobacco Survey provides a data “smoke” includes the key variables such as Gender, Age and Race, which is collected by questionnaires asked annually.  
+
+## Methods
+Important variables are selected from the survey data frame to build new dataframes: tobacco and waterpipe to solve the questions respectively. In tobacco dataframe, we select the variables "Race", demographic character "RuralUrban" and the dummy variable"chewing_tobacco_snuff_or" which determine whether use chewing tobacco regularly. In waterpipe dataframe we select "Sex", dummy variable "ever_tobacco_hookah_or_wa" standing for ever use tobacco hookah or water pipe, "Age", "Race" and "RuralUrban". Both dataframes have 20501 observations. 
+
+We use binomial logistic regression model in both problems. The reason for choosing binomial family is the outcome is binary(1 or 2 for example) and discrete.The general models are presented following. First one generalizes the dummy variable "chewing_tobacco_snuff_or" by Race and RuralUrban:
+
+$Odds_{chew} = \beta_0 + \beta_1 x_{Rural} + \beta_2 I_{Black} + \beta_3 I_{Hispanic} + \beta_4 I_{Asian} + \beta_5 I_{Native} + \beta_6 I_{Pacific}$
+
+and the other one indicates whether try waterpipe interpreted by Age, Race, Rural or Urban and Sex:
+
+$Odds_{waterpipe} = \beta_0 + \beta_1 x_{Age} + \beta_2 I_{Black} + \beta_3 I_{Hispanic} + \beta_4 I_{Asian} + \beta_5 I_{Native} + \beta_6 I_{Pacific} + \beta_7 I_{Rural} + \beta_8 I_{Female}$
+
+Since according to the binomial logistic regression model,
+$\ln{(p/(1-p))} = \beta_0 + \beta_x + e$
+the odds ratio (p/(1-p)) is log-transformed, the estimates from model should convert back by exponential to the original scale before analysis.
+
+
+
+## Result
+
+Two tables (Table2 and Table3) are provided by the models mentioning in methods. The estimates in both tables are exponential transformed to be interpretable, which is specifically reasoned in method.
+
+From Table2, we can interpret that race clearly effects the regular use of chewing tobacco. Although the African-Americans and Hispanic-Americans do significantly contribute to the usage of chewing tobacco, European-Americans still consume the most chewing tobacco in survey. It is also proved by the significant higher usage in rural place than urban area, as we know the fact that most rural residents are white Americans.
+
+From Table3, most of the races, age and demographic characters show significant effect to the trying of waterpipe or hookah. However, under the similar conditions, different gender of individuals does not show significant effect to this case(p-value > 0.05).
+
+
+
+```{r , echo=FALSE, results='hide'}
+#inputdata
+smokeUrl = 'http://pbrown.ca/teaching/appliedstats/data/smoke.RData'
+(smokeFile = tempfile(fileext='.RData'))
+download.file(smokeUrl, smokeFile, mode='wb')
+(load(smokeFile))
+#subtract 9 years old
+smokeSub = smoke[smoke$Age != 9 & !is.na(smoke$Race) &
+                   !is.na(smoke$chewing_tobacco_snuff_o), ]
+#select efficient colomns
+tobacco = data.frame(Chew = smokeSub$chewing_tobacco_snuff_or,
+                     Race = smokeSub$Race,
+                     RuralUrban = smokeSub$RuralUrban)
+
+waterpipe = data.frame(Sex = smokeSub$Sex,
+                       Ever_hookah = smokeSub$ever_tobacco_hookah_or_wa,
+                       Age = smokeSub$Age, 
+                       RuralUrban = smokeSub$RuralUrban,
+                       Race = smokeSub$Race)
+```
+
+
+```{r tobacco, echo=FALSE}
+a <- glm(Chew ~ RuralUrban + Race, family = binomial, data = tobacco)
+dataa <- data.frame(Estimate = round(exp(a$coef),3),
+                    round(summary(a)$coef, 3))
+dataa = dataa[,!(names(dataa) %in% "Estimate.1")]
+knitr::kable(dataa, digits = 3, caption = "Effect of race,rural/urban on chewing tobacco use by binomial generalized linear model.")
+```
+
+```{r waterpipe, echo=FALSE}
+
+b <- glm(Ever_hookah ~ Age + Race + RuralUrban + Sex ,family = binomial, data = waterpipe)
+dataa <- data.frame(Estimate = round(exp(a$coef),3), round(summary(a)$coef, 3))
+dataa = dataa[,!(names(dataa) %in% "Estimate.1")]
+datab <- data.frame(Estimate = round(exp(b$coef),3), round(summary(b)$coef, 3))
+datab = datab[,!(names(datab) %in% "Estimate.1")]
+knitr::kable(datab, digits = 3, caption = "Effect of gender on hookah use by binomial generalized linear model  ")
+```
+
+
+## Appendix
+Codes were included:
+```{r, eval=FALSE, results ='hide'}
+#inputdata
+smokeUrl = 'http://pbrown.ca/teaching/appliedstats/data/smoke.RData'
+(smokeFile = tempfile(fileext='.RData'))
+download.file(smokeUrl, smokeFile, mode='wb')
+(load(smokeFile))
+#subtract 9 years old
+smokeSub = smoke[smoke$Age != 9 & !is.na(smoke$Race) &
+                   !is.na(smoke$chewing_tobacco_snuff_o), ]
+#select efficient colomns
+tobacco = data.frame(Chew = smokeSub$chewing_tobacco_snuff_or,
+                     Race = smokeSub$Race,
+                     RuralUrban = smokeSub$RuralUrban)
+
+waterpipe = data.frame(Sex = smokeSub$Sex,
+                       Ever_hookah = smokeSub$ever_tobacco_hookah_or_wa,
+                       Age = smokeSub$Age, 
+                       RuralUrban = smokeSub$RuralUrban,
+                       Race = smokeSub$Race)
+#modeling
+a <- glm(Chew ~ RuralUrban + Race, family = binomial, data = tobacco)
+knitr::kable(summary(a)$coef, digits = 3, 
+             caption = "effect of race,rural/urban on chewing tobacco use")
+b <- glm(Ever_hookah ~ Age + Race + RuralUrban + Sex ,family = binomial, data = waterpipe)
+knitr::kable(summary(wtp)$coef, digits = 3, caption = "effect of gender on hookah use")
+dataa <- data.frame(Estimate = round(exp(a$coef),3), round(summary(a)$coef, 3))
+dataa = dataa[,!(names(dataa) %in% "Estimate.1")]
+datab <- data.frame(Estimate = round(exp(b$coef),3), round(summary(b)$coef, 3))
+datab = datab[,!(names(datab) %in% "Estimate.1")]
+```
